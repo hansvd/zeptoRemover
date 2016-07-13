@@ -27,22 +27,26 @@ namespace ZeptoRemove
                         continue;
                 }
                 if (ext == ".zepto") nrZepto ++;
-                
+                File.Delete(f);
             }
             return nrZepto;
         }
 
         public static int CopyMissing(string destDir, string backupDir)
         {
-            var nrCopied = 0;
-            var destFiles = Directory.GetFiles(destDir);
+            if (backupDir == null) return 0;
             var backupFiles = Directory.GetFiles(backupDir);
+            if (backupFiles.Length == 0) return 0;
+            var destFiles = Directory.GetFiles(destDir);
+            var nrCopied = 0;
             foreach (var f in backupFiles)
             {
                 var fName = Path.GetFileName(f);
                 if (fName == null) continue;
                 if (destFiles.Any(d => fName.Equals(Path.GetFileName(d))))
                     continue;
+
+                File.Copy(f,Path.Combine(destDir,fName));
                 nrCopied++;
             }
             return nrCopied;
