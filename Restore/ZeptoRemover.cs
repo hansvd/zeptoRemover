@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using NLog;
-using ZeptoRemove;
 
-namespace Restore
+namespace ZeptoRemove
 {
     public class ZeptoRemover
     {
