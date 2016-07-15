@@ -6,13 +6,18 @@ namespace ZeptoRemove
 {
     class ZeptoHelper
     {
+        private readonly bool _dryRun;
+        public ZeptoHelper(bool dryRun)
+        {
+            _dryRun = dryRun;
+        }
 
-        public static bool IsInfected(string destDir, string[] files)
+        public static bool IsInfected(string[] files)
         {
             return files.Any(f => Path.GetExtension(f)?.Equals(".zepto") ?? false);
         }
 
-        public static int  RemoveInfected(string[] files)
+        public int  RemoveInfected(string[] files)
         {
             int nrZepto = 0;
             foreach (var f in files)
@@ -27,12 +32,12 @@ namespace ZeptoRemove
                         continue;
                 }
                 if (ext == ".zepto") nrZepto ++;
-                File.Delete(f);
+                if (!_dryRun) File.Delete(f);
             }
             return nrZepto;
         }
 
-        public static int CopyMissing(string destDir, string backupDir)
+        public int CopyMissing(string destDir, string backupDir)
         {
             if (backupDir == null) return 0;
             var backupFiles = Directory.GetFiles(backupDir);
@@ -46,7 +51,8 @@ namespace ZeptoRemove
                 if (destFiles.Any(d => fName.Equals(Path.GetFileName(d))))
                     continue;
 
-                File.Copy(f,Path.Combine(destDir,fName));
+                if (!_dryRun)
+                    File.Copy(f,Path.Combine(destDir,fName));
                 nrCopied++;
             }
             return nrCopied;

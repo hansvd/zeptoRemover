@@ -11,11 +11,13 @@ namespace ZeptoRemove
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly string _backupDir;
         private readonly string _destDir;
+        private readonly bool _dryRun;
 
-        public ZeptoRemover(string backupDir, string destDir)
+        public ZeptoRemover(string backupDir, string destDir, bool dryRun)
         {
             _backupDir = backupDir;
             _destDir = destDir;
+            _dryRun = dryRun;
         }
 
         public void Invoke()
@@ -39,7 +41,7 @@ namespace ZeptoRemove
         {
 // check if contains zepto files
             var destFiles = Directory.GetFiles(destDir);
-            bool isInfected = ZeptoHelper.IsInfected(destDir, destFiles);
+            bool isInfected = ZeptoHelper.IsInfected(destFiles);
 
             if (isInfected)
                 Logger.Info($"{destDir} <= {backupDir}");
@@ -47,6 +49,8 @@ namespace ZeptoRemove
             if (isInfected && backupDir == null)
             {
                 Logger.Warn($"Cannot restore dir {destDir}");
+                if (!_dryRun)
+                    File.WriteAllText(Path.Combine(destDir, "ZiptoRemovalWarning.txt"), $"No backups found");
             }
 
             // cleanup
@@ -54,17 +58,20 @@ namespace ZeptoRemove
             CleanupChilds(backupDir, destDir);
         }
 
-        private static void Cleanup(string backupDir, string destDir, string[] destFiles)
+        private void Cleanup(string backupDir, string destDir, string[] destFiles)
         {
             try
             {
-                var nrRemoved = ZeptoHelper.RemoveInfected(destFiles);
+                var helper = new ZeptoHelper(_dryRun);
+                var nrRemoved = helper.RemoveInfected(destFiles);
                 if (nrRemoved == 0) return;
-                var nrCopied = ZeptoHelper.CopyMissing(destDir, backupDir);
+                var nrCopied = helper.CopyMissing(destDir, backupDir);
 
                 if (nrRemoved > nrCopied)
                 {
                     Logger.Warn($"Not all files restored for {destDir}, {nrRemoved} removed, {nrCopied} restored");
+                    if (!_dryRun)
+                        File.WriteAllText(Path.Combine(destDir,"ZiptoRemovalWarning.txt"),$"Not al files restored in this dir: {nrCopied}/{nrRemoved}");
                 }
                 else
                 {
@@ -75,12 +82,6 @@ namespace ZeptoRemove
             {
                 Logger.Error(e,$"Cannot cleanup dir {destDir}");
             }
-        }
-
-
-        private bool IsInfected(string destDir)
-        {
-            throw new NotImplementedException();
         }
 
         private void CleanupChilds(string backupDir, string destDir)
@@ -94,7 +95,6 @@ namespace ZeptoRemove
                 if (childName == null) continue;
                 if (childName == "$RECYCLE.BIN") continue;
                 if (childName == "System Volume Information") continue;
-                if (childName == "DIT IS HET MAPJE VAN DE BALIE BACKUP PC") continue;
                 if (childName.StartsWith("GEINFECTEERD")) continue;
 
                 var backupChild =

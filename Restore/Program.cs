@@ -8,14 +8,15 @@ namespace Restore
     {
         static int Main(string[] args)
         {
-            if (args.Length != 2)
+            if (args.Length < 2)
             {
-                Console.WriteLine($"usage: ZeptoRemove.exe backupDir destDir");
+                Console.WriteLine($"usage: ZeptoRemove.exe backupDir destDir [go]");
                 return -1;
             }
 
             var backupDir = args[0];
             var destDir = args[1];
+            var go = args.Length > 2 && args[2] == "go";
 
             if (!Directory.Exists(backupDir))
             {
@@ -27,7 +28,7 @@ namespace Restore
                 Console.WriteLine($"Can find dir {destDir}");
                 return -1;
             }
-            new ZeptoRemover(backupDir,destDir).Invoke();
+            new ZeptoRemover(backupDir,destDir, !go).Invoke();
             return 0;
         }
     }
